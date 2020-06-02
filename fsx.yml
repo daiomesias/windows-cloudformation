@@ -1,0 +1,17 @@
+Type: AWS::FSx::FileSystem
+Properties: 
+  BackupId: String
+  FileSystemType: String
+  KmsKeyId: String
+  LustreConfiguration: 
+    LustreConfiguration
+  SecurityGroupIds: 
+    - String
+  StorageCapacity: Integer
+  StorageType: String
+  SubnetIds: 
+    - String
+  Tags: 
+    - Tag
+  WindowsConfiguration: 
+    WindowsConfiguration

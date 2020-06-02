@@ -67,7 +67,7 @@ Metadata:
       QSS3KeyPrefix:
         default: Quick Start S3 Key Prefix
       S3BucketName:
-        default: S3 bucket name
+        default: PermutaProp
       RemoteAccessCIDR:
         default: Allowed bastion external access CIDR
       VPCCIDR:
