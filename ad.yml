@@ -1,0 +1,17 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template provide a new AD with VPC and Subnet specifications.
+  Type: AWS::DirectoryService::MicrosoftAD
+  Properties: 
+    CreateAlias: Boolean
+    Edition: Standard
+    EnableSso: True
+    Name: "corp.permutaprop.com"
+    Password: PASSWORDSETUPFROMSECRETS
+    ShortName: corp.permutaprop.com
+    VpcSettings: 
+      SubnetIds: 
+        - Ref: subnetID1
+        - Ref: subnetID2
+      VpcId: 
+        Ref: vpcID

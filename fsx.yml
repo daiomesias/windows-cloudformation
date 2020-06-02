@@ -1,0 +1,31 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template provide a FSX fylesystem.
+Type: 'AWS::FSx::FileSystem'
+Properties: 
+  BackupId: String
+  FileSystemType: WINDOWS
+  KmsKeyId: String
+  LustreConfiguration: 
+    LustreConfiguration
+  SecurityGroupIds: 
+    - PERMUTAPROP-SG
+  StorageCapacity: 1024
+  StorageType: SSD
+  SubnetIds: 
+    - String
+  Tags: 
+    - Key: Name
+    - Value: permutaprop-fsx
+  WindowsConfiguration:
+        ActiveDirectoryId: !ImportValue corp.permutaprop.com
+        ThroughputCapacity: 8
+        WeeklyMaintenanceStartTime: '4:16:30'
+        DailyAutomaticBackupStartTime: '01:00'
+        AutomaticBackupRetentionDays: 2
+        DeploymentType: MULTI_AZ_1
+        PreferredSubnetId: !ImportValue CfnFsxMadSubnet01
+        CopyTagsToBackups: false
+Outputs:
+  FileSystemId:
+    Value: !Ref WindowsMadFileSystemWithAllConfigs

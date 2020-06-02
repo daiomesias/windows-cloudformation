@@ -1,0 +1,15 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template provide a MySQL server with backup and a SG.
+MyDB:
+  Type: AWS::RDS::DBInstance
+  Properties:
+    DBSecurityGroups:
+    - Ref: MyDbSecurityByEC2SecurityGroup
+    - Ref: MyDbSecurityByCIDRIPGroup
+    AllocatedStorage: '5'
+    DBInstanceClass: db.m1.small
+    Engine: MySQL
+    MasterUsername: permutoprop
+    MasterUserPassword: KMSprovided
+  DeletionPolicy: Snapshot
