@@ -1,0 +1,42 @@
+{   
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Parameters": {
+        "VPCID": {
+            "Description": "Select VPC used by Microsoft AD.",
+            "Type": "AWS::EC2::VPC::Id"
+          },
+          "Subnets": {
+            "Description": "Select 2 subnets used by Microsoft AD.",
+            "Type": "List<AWS::EC2::Subnet::Id>"
+          },
+          "ADID": {
+            "ConstraintDescription": "Insert Directory ID inside Directory Service ",
+            "Type": "String",
+            "Default" : "d-9267035651"
+          }
+    },
+            "Resources": {
+                    "SGpermutaprop" : {
+                        "Type" : "AWS::EC2::SecurityGroup",
+                        "Properties" : {
+                           "GroupDescription" : "Allow http to client host",
+                           "VpcId" : {"Ref" : "VPCID"},
+                           "SecurityGroupIngress" : [{
+                              "IpProtocol" : "tcp",
+                              "FromPort" : 80,
+                              "ToPort" : 80,
+                              "CidrIp" : "0.0.0.0/0"
+                           }],
+                           "SecurityGroupEgress" : [{
+                              "IpProtocol" : "tcp",
+                              "FromPort" : 80,
+                              "ToPort" : 80,
+                              "CidrIp" : "0.0.0.0/0"
+                           }]
+                        }
+                     }
+        },
+        "Outputs": {
+                }
+            }
+

@@ -1,0 +1,124 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+   "Description" : "Autoscalling with 2 ec2, ELB, Apache in the same Availability Zone",
+   "Parameters" : {
+   "ImageID" : {
+    "Type" : "String",
+    "Description" : "Image for the instances: amazon linux 2 ami-0e34e7b9ca0ace12d",
+    "AllowedValues" : [ "ami-0e34e7b9ca0ace12d" , "ami-f4e6da91" ],
+    "Default" : "ami-0e34e7b9ca0ace12d"  
+   },
+   "InstanceType": {
+     "Type" : "String",
+     "Description": "Instance Type",
+     "AllowedValues" : [ "t2.micro", "t2.small" ],
+     "Default" : "t2.micro"  
+},
+"InstanceNumber" : {
+  "Type": "String",
+  "Description": "Number of instances for autoscaling",
+  "AllowedValues" : [ "1", "2" ],
+  "Default": "1"
+},
+"KeyPair" : {
+  "Type" : "AWS::EC2::KeyPair::KeyName",
+  "Description" : "KeyPair to access" , 
+  "AllowedPattern" : ".+",
+  "ConstraintDescription" : "KeyPair is mandatory, default  permutaprop-key", 
+  "Default" : "permutaprop-key"  
+  },
+  "AvailabilityZone": {
+    "Type": "String",
+    "Description": "Availability Zone for all resources",
+    "AllowedPattern" : ".+",
+    "ConstraintDescription": "Availability Zone is mandatory",
+    "Default": "us-west-2c"
+  },
+"Resources": {
+  "LaunchConfig": {
+    "Type": "AWS::AutoScaling::LaunchConfiguration",
+    "Metadata": {
+      "AWS::CloudFormation::Init": {
+        "config": {
+          "packages": {
+            "yum": {
+              "httpd": []
+            }
+          },
+          "services": {
+            "sysvinit": {
+              "httpd": {
+                "enabled": "true",
+                "ensureRunning": "true"
+              }
+            }
+          }
+        }
+      }
+    },
+      "Properties" : {
+        "KeyName" : { "Ref" : "KeyName" },
+        "ImageId" : { "Ref": "ImageID" },
+        "InstanceType" : { "Ref" : "InstanceType" },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [ "#!/bin/bash -xe\n",
+                "# Install the files and packages from the metadata\n",
+                "/opt/aws/bin/cfn-init -v ",
+                "         --stack ", { "Ref": "AWS::StackName" },
+                "         --resource LaunchConfig",
+                "         --region ", { "Ref": "AWS::Region" }, "\n"
+              ]
+            ]
+          }
+        }
+      }
+    }
+  }
+},
+
+"Autoscaling": {
+  "Type": "AWS::AutoScaling::AutoScalingGroup",
+  "Properties": {
+    "AvailabilityZones": [ { "Ref": "AvailabilityZone" } ],
+    "LaunchConfigurationName": { "Ref" : "LaunchConfig" },
+    "MinSize": { "Ref": "InstanceNumber" },
+    "MaxSize": { "Ref": "InstanceNumber" },
+    "LoadBalancerNames": [ { "Ref": "Balancer" } ]
+  }
+},
+"Balancer": {
+  "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+  "Properties": {
+    "AvailabilityZones": [ { "Ref": "AvailabilityZone" } ],
+    "Listeners": [
+      {
+        "LoadBalancerPort": "80",
+        "InstancePort": "80",
+        "Protocol": "TCP",
+        "InstanceProtocol" : "TCP"
+      }
+    ],
+    "HealthCheck": {
+      "Target": "TCP:80",
+      "HealthyThreshold": "2",
+      "UnhealthyThreshold": "2",
+      "Interval": "10",
+      "Timeout": "5"
+    }
+  }
+},
+"Outputs": {
+"BalancerURL": {
+  "Description" : "Balancer",
+  "Value" : {
+    "Fn::Join": [
+      "",
+      [ "http://", { "Fn::GetAtt" : [ "Balancer", "DNSName" ] } ]
+    ]
+  }
+}
+}
+}
