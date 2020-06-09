@@ -73,6 +73,7 @@
                         "AutomaticBackupRetentionDays": 2,
                         "CopyTagsToBackups": false,
                         "DeploymentType": "MULTI_AZ_1",
+                        "BackupRetentionPeriod": "14",
                         "PreferredSubnetId": {
                             "Ref": "Subnetpre"
                         }

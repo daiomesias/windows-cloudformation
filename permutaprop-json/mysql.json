@@ -4,7 +4,7 @@
 
     "Parameters": {
         "DBInstanceID": {
-            "Default": "permutapropMySQL",
+            "Default": "ppropMySQL",
             "Description": "Permutaprop MySql",
             "Type": "String",
             "MinLength": "1",
@@ -14,7 +14,7 @@
             "ConstraintDescription": "Must begin with a letter and must not end with a hyphen or contain two consecutive hyphens."
         },
         "DBName": {
-            "Default": "permutapropdb",
+            "Default": "ppropdb",
             "Description": "My DB",
             "Type": "String",
             "MinLength": "1",
@@ -24,19 +24,32 @@
         },
         "DBInstanceClass": {
             "Default": "db.m5.large",
-
             "Description": "DB instance class",
             "Type": "String",
             "ConstraintDescription": "Must select a valid DB instance type."
         },
         "DBAllocatedStorage": {
-            "Default": "50",
+            "Default": "100",
             "Description": "The size of the database (GiB)",
             "Type": "Number",
             "MinValue": "5",
             "MaxValue": "1024",
-
             "ConstraintDescription": "must be between 20 and 65536 GiB."
+        },
+        "DBAIOPSStorage": {
+            "Default": "1000",
+            "Description": "The size of the database IOPS",
+            "Type": "Number",
+            "MinValue": "1000",
+            "MaxValue": "3000",
+            "ConstraintDescription": "must be between 1000 and 3000 IOPS."
+        },
+        "DBAStorageType": {
+            "Default": "io1",
+            "Description": "The type of the storage",
+            "AllowedValues": [ "standard" ,  "gp2" , "io1" ],
+            "Type": "String",
+            "ConstraintDescription":  "must be a valid type."
         },
         "DBUsername": {
             "NoEcho": "true",
@@ -59,9 +72,31 @@
         }
     },
     "Resources": {
+        "MySQLServerSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+              "GroupDescription": "SQL Server Security Group",
+              "SecurityGroupIngress": [
+                {
+                  "IpProtocol": "tcp",
+                  "FromPort": "3306",
+                  "ToPort": "3306",
+                  "CidrIp": "172.31.0.0/16"
+                }
+              ]
+            }
+          },
         "MyDB": {
             "Type": "AWS::RDS::DBInstance",
             "Properties": {
+                "VPCSecurityGroups": [
+                    {
+                      "Fn::GetAtt": [
+                        "MySQLServerSecurityGroup",
+                        "GroupId"
+                      ]
+                    }
+                  ],
                 "DBInstanceIdentifier": {
                     "Ref": "DBInstanceID"
                 },
@@ -75,8 +110,16 @@
                 "AllocatedStorage": {
                     "Ref": "DBAllocatedStorage"
                 },
+                "Iops" : {
+                    "Ref": "DBAIOPSStorage"
+                  },
                 "Engine": "MySQL",
                 "EngineVersion": "8.0.16",
+                "MultiAZ": false,
+                "StorageType" :  {
+                    "Ref": "DBAStorageType"
+                },
+                "BackupRetentionPeriod": "14",
                 "MasterUsername": {
 
                     "Ref": "DBUsername"
