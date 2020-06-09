@@ -1,0 +1,164 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+   "Description" : "Autoscalling with 2 ec2 windows server and IIS, ELB in the differents Availability Zones",
+   "Parameters" : {
+   "ImageIDA" : {
+    "Type" : "String",
+    "Description" : "Image for the instances: windows 2019 ami-0cb8c277ab5436fac, windows 2017 Standard SQL ami-09bd10a0fa6dfcd7b",
+    "AllowedValues" : [ "ami-02b8489dfe6ce6eb6" , "ami-0cb8c277ab5436fac" ],
+    "Default" : "ami-02b8489dfe6ce6eb6"  
+   },
+   "ImageIDB" : {
+    "Type" : "String",
+    "Description" : "Image for the instances: windows 2019 ami-0cb8c277ab5436fac, windows 2017 Standard SQL ami-09bd10a0fa6dfcd7b",
+    "AllowedValues" : [ "ami-0959be611f66bce73" , "ami-0cb8c277ab5436fac" ],
+    "Default" : "ami-0959be611f66bce73"  
+   },
+   "InstanceType": {
+     "Type" : "String",
+     "Description": "Instance Type",
+     "AllowedValues" : [ "t2.micro", "m5.large" ],
+     "Default" : "t2.micro"  
+  },
+  "InstanceNumber" : {
+  "Type": "String",
+  "Description": "Number of instances for autoscaling",
+  "AllowedValues" : [ "1", "2" ],
+  "Default": "1"
+  },
+  "KeyPair" : {
+  "Type" : "AWS::EC2::KeyPair::KeyName",
+  "Description" : "KeyPair to access" , 
+  "AllowedPattern" : ".+",
+  "ConstraintDescription" : "KeyPair is mandatory, default  permutaprop-key", 
+  "Default" : "permutaprop-key"  
+  },
+  "VPCID": {
+    "Description": "Select VPC used by ec2.",
+    "Type": "AWS::EC2::VPC::Id"
+  },
+  "Subnets": {
+    "Description": "Select 2 subnets used by ec2.",
+    "Type": "List<AWS::EC2::Subnet::Id>"
+  },
+  "Subnetpre": {
+    "ConstraintDescription": "Select just one prefered subnet",
+    "Description": "Select just one prefered subnet",
+    "Type": "String"
+  },
+  "SGID": {
+    "Description": "Select Security Groups used by ec2",
+    "Type": "List<AWS::EC2::SecurityGroup::Id>"
+  },
+  "ADID": {
+    "ConstraintDescription": "Insert Directory ID inside Directory Service ",
+    "Type": "String",
+    "Default" : "d-9267035651"
+  },
+  "RoleName" : {
+    "Description" : "Role description",
+    "Type" : "String",
+    "Default" : "arn:aws:iam::673501758087:role/EC2DomainJoin",
+    "ConstraintDescription" : "Must be a valid IAM Role"
+  },
+  "AZONE" : {
+    "ConstraintDescription": "Insert Availability Zone",
+    "Type": "String",
+    "Default" : "us-west-2a"
+    }
+  },
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "Network parameters"
+          },
+          "Parameters": [
+            "VPCID",
+            "Subnets",
+            "SGID",
+            "KeyPair"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Directory parameters"
+          },
+          "Parameters": [
+            "SGID"
+          ]
+        }
+      ]
+    }
+  },
+  "Resources": {
+    "SGpermutaprop" : {
+        "Type" : "AWS::EC2::SecurityGroup",
+        "Properties" : {
+           "GroupDescription" : "Allow http to client host",
+           "VpcId" : {"Ref" : "VPCID"},
+           "SecurityGroupIngress" : [{
+              "IpProtocol" : "tcp",
+              "FromPort" : 80,
+              "ToPort" : 80,
+              "CidrIp" : "172.31.0.0/16"
+           }],
+           "SecurityGroupEgress" : [{
+              "IpProtocol" : "tcp",
+              "FromPort" : 80,
+              "ToPort" : 80,
+              "CidrIp" : "172.31.0.0/16"
+           }]
+        }
+     },
+    "InstanceA": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType" : { "Ref" : "InstanceType" },
+        "IamInstanceProfile"  : { "Ref" : "RoleName" },
+        "KeyName" : { "Ref" : "KeyPair" },
+        "ImageId" : { "Ref" : "ImageIDA" }
+     }
+      },
+      "InstanceB": {
+        "Type": "AWS::EC2::Instance",
+        "Properties": {
+          "InstanceType" : { "Ref" : "InstanceType" },
+          "IamInstanceProfile"  : { "Ref" : "RoleName" },
+          "KeyName" : { "Ref" : "KeyPair" },
+          "ImageId" : { "Ref" : "ImageIDB" }
+       }
+        },
+    "Balancer": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "AvailabilityZones": [ { "Ref": "AZONE" } ],
+        "Instances" : [ { "Ref" :  "InstanceA" } , { "Ref" : "InstanceB" } ],
+        "Listeners": [
+          {
+            "LoadBalancerPort": "80",
+            "InstancePort": "80",
+            "Protocol": "TCP",
+            "InstanceProtocol" : "TCP"
+          }
+        ],
+        "HealthCheck": {
+          "Target": "TCP:80",
+          "HealthyThreshold": "2",
+          "UnhealthyThreshold": "2",
+          "Interval": "10",
+          "Timeout": "5"
+          }  
+        }    
+      }
+    },
+  "Outputs": {
+  "InstanceDataOut": {
+  "Description" : "InstanceDataOut",
+  "Value" : {
+    "Ref" : "Balancer"
+        }
+      }
+    }
+  }

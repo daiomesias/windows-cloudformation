@@ -5,8 +5,8 @@
  "ImageID" : {
   "Type" : "String",
   "Description" : "Image for the instances: windows 2019 ami-0cb8c277ab5436fac, windows 2017 Standard SQL ami-09bd10a0fa6dfcd7b",
-  "AllowedValues" : [ "ami-0cb8c277ab5436fac" , "ami-09bd10a0fa6dfcd7b" ],
-  "Default" : "ami-0cb8c277ab5436fac"  
+  "AllowedValues" : [ "ami-02b8489dfe6ce6eb6" , "ami-0cb8c277ab5436fac" ],
+  "Default" : "ami-02b8489dfe6ce6eb6"  
  },
  "InstanceType": {
    "Type" : "String",
@@ -49,16 +49,17 @@
   "Type": "String",
   "Default" : "d-9267035651"
 },
+"RoleName" : {
+  "Description" : "Role description",
+  "Type" : "String",
+  "Default" : "arn:aws:iam::673501758087:role/EC2DomainJoin",
+  "ConstraintDescription" : "Must be a valid IAM Role"
+},
 "AZONE" : {
   "ConstraintDescription": "Insert Availability Zone",
   "Type": "String",
   "Default" : "us-west-2a"
-  },
-  "size" : {
-    "ConstraintDescription": "Insert size for the ebs volume",
-    "Type": "String",
-    "Default" : "60"
-    }
+  }
 },
 "Metadata": {
   "AWS::CloudFormation::Interface": {
@@ -90,44 +91,11 @@
     "Type": "AWS::AutoScaling::LaunchConfiguration",
     "Properties": {
       "InstanceType" : { "Ref" : "InstanceType" },
+      "IamInstanceProfile"  : { "Ref" : "RoleName" },
       "KeyName" : { "Ref" : "KeyPair" },
-      "ImageId" : { "Ref" : "ImageID" },
-      "BlockDeviceMappings" : [
-        {
-           "DeviceName" : "/dev/sda",
-           "Ebs" : {
-             "VolumeType" : "gp2",
-             "Iops" : "16000",
-             "DeleteOnTermination" : "false",
-             "VolumeSize" :  { "Ref" : "size" }
-            }
-          }, 
-          {
-            "DeviceName" : "/dev/sdk",
-            "NoDevice" : {}
-          }
-      ]
-   },
-      "UserData" : {
-        "Fn::Base64" : {
-            "Fn::Join" : [
-                "",
-                [
-                    "<powershell>\n",
-                    "# Install IIS and Web Management Tools.\n",
-                    "Import-Module ServerManager\n",
-                    "install-windowsfeature web-server, web-webserver\n",
-                    "install-windowsfeature web-mgmt-tools\n",
-                    "</powershell>\n",
-                    "<powershell>\n",
-                    "enter-pssession -ComputerName amznfsxefrpc7o9.corp.permutaprop.com -ConfigurationName FsxRemoteAdmin",
-                    "</powershell>\n"
-                ]
-            ]
-        }
-      }
-    }
-  },
+      "ImageId" : { "Ref" : "ImageID" }
+   }
+    },
   "Scaling": {
     "Type": "AWS::AutoScaling::AutoScalingGroup",
     "Properties": {
@@ -159,8 +127,7 @@
         }  
       }    
     }
-},
-
+  },
 "Outputs": {
 "InstanceDataOut": {
 "Description" : "InstanceDataOut",
