@@ -113,6 +113,10 @@
         "DependsOn": "SQLServerSecurityGroup"
       }
     },
-    "Outputs": {
+    "Outputs" : {
+      "MySqlOutdata" : {
+       "Description" : "MSSQL Output data",
+       "Value" : "SQLDatabase"    
+            } 
+        }  
     }
-  }

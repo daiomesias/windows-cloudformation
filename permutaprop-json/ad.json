@@ -1,5 +1,6 @@
     {
       "AWSTemplateFormatVersion" : "2010-09-09",
+      "Description" : "Create a Microsoft AD Directory Service",
       "Parameters": {
         "VPCID": {
           "Description": "Select VPC used by Microsoft AD.",
@@ -88,5 +89,12 @@
             }
           }
         }
+      },
+      "Outputs" : {
+        "Outdata" : {
+         "Description" : "MS AD Output data",
+         "Value" : "MSAD"    
+              } 
+          }  
       }
-    }
+    

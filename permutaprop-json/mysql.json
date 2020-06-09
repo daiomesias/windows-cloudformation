@@ -89,5 +89,11 @@
                 "MonitoringRoleArn": "arn:aws:iam::673501758087:role/rds-monitoring-role"
             }
         }
-    }
-}
+    },
+    "Outputs" : {
+        "MySqlOutdata" : {
+         "Description" : "MySQL Output data",
+         "Value" : "MyDB"    
+              } 
+          }  
+      }

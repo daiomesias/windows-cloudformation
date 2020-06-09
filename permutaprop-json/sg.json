@@ -37,6 +37,10 @@
                      }
         },
         "Outputs": {
-                }
+         "SecGroupIp": {
+            "Value": {
+                "Ref": "SGpermutaprop"
             }
-
+         }
+      }
+   }
