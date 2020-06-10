@@ -19,6 +19,20 @@
             "Enterprise "
           ]
         },
+        "ENV": {
+          "Description": "Environment Staging or Prod",
+          "Type": "String",
+          "Default": "Stage",
+          "AllowedValues": [
+            "Stage",
+            "Prod"
+          ]
+        },
+        "Resource": {
+          "Description": "Resource tag.",
+          "Type": "String",
+          "Default": "Active Directory"
+        },
         "DNSName": {
           "Description": "Directory DNS name.",
           "Type": "String",
@@ -85,7 +99,17 @@
               },
               "VpcId": {
                 "Ref": "VPCID"
-              }
+              },
+              "Tags" : [
+                {
+                   "Key" : "Name",
+                   "Value" : {"Ref" : "Resource" }
+                },
+                {
+                   "Key" : "Environment",
+                   "Value" : {"Ref" : "ENV" }
+                }
+             ]
             }
           }
         }

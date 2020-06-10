@@ -59,6 +59,20 @@
   "ConstraintDescription": "Insert Availability Zone",
   "Type": "String",
   "Default" : "us-west-2a"
+  },
+  "ENV": {
+    "Description": "Environment Staging or Prod",
+    "Type": "String",
+    "Default": "Stage",
+    "AllowedValues": [
+      "Stage",
+      "Prod"
+    ]
+  },
+  "Resource": {
+    "Description": "Resource tag.",
+    "Type": "String",
+    "Default": "Windows Server"
   }
 },
 "Metadata": {
@@ -93,7 +107,17 @@
       "InstanceType" : { "Ref" : "InstanceType" },
       "IamInstanceProfile"  : { "Ref" : "RoleName" },
       "KeyName" : { "Ref" : "KeyPair" },
-      "ImageId" : { "Ref" : "ImageID" }
+      "ImageId" : { "Ref" : "ImageID" },
+      "Tags" : [
+        {
+           "Key" : "Name",
+           "Value" : {"Ref" : "Resource" }
+        },
+        {
+           "Key" : "Environment",
+           "Value" : {"Ref" : "ENV" }
+        }
+     ]
    }
     },
   "Scaling": {

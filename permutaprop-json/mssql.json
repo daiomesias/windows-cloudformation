@@ -56,6 +56,20 @@
         "MinValue": "5",
         "MaxValue": "1024",
         "ConstraintDescription": "must be between 20 and 65536 GiB."
+    },
+    "ENV": {
+      "Description": "Environment Staging or Prod",
+      "Type": "String",
+      "Default": "Stage",
+      "AllowedValues": [
+        "Stage",
+        "Prod"
+      ]
+    },
+    "Resource": {
+      "Description": "Resource tag.",
+      "Type": "String",
+      "Default": "MSSQL DB"
     }
     },
     "Metadata": {
@@ -137,16 +151,16 @@
             "Ref": "DBAIOPSStorage"
           },
           "PubliclyAccessible": "false",
-          "Tags": [
+          "Tags" : [
             {
-              "Key": "Name",
-              "Value": "sqlmaster"
+               "Key" : "Name",
+               "Value" : {"Ref" : "Resource" }
             },
             {
-              "Key": "project",
-              "Value": "development unittest"
+               "Key" : "Environment",
+               "Value" : {"Ref" : "ENV" }
             }
-          ],
+         ],
           "BackupRetentionPeriod": "14"
         },
         "DependsOn": "SQLServerSecurityGroup"

@@ -1,0 +1,159 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Create AWS Backup Vault, Backup Plan and Backup Selection",
+    "Parameters": {
+           "BackupVaultName": {
+            "Type": "String",
+            "Default": "mybackup-vault-sample"
+        },
+           "BackupSelectionName": {
+            "Type": "String",
+            "Default": "daily-backup",
+            "Description": "AWS Backup name for BackupSelection"
+        },
+           "Team": {
+           "Type": "String",
+            "Default": "AppTeamSample",
+            "Description": "Team name that own's the backup, this will be use for tag"
+        },
+           "Email": {
+           "Type": "String",
+            "Default": "team-email@yourdomain.com",
+            "Description": "Insert a mail"
+        },
+           "BackupDefaultRole": {
+           "Type": "String",
+            "Default": "arn:aws:iam::673501758087:role/service-role/AWSBackupDefaultServiceRole",
+            "Description": "Insert a role"
+        },
+           "DeleteAfterDays": {
+           "Type": "Number",
+           "Default": 14
+        },
+      "BackupPlanName": {
+        "Type": "String",
+        "Description": "AWS Backup name for BackupPlan",
+        "Default": "Test-backup"
+      },
+      "BackupPolicy": {
+        "Type": "String",
+        "Description": "AWS Backup frequency choose between backup once a day",
+        "AllowedValues": [
+          "BackupOnceDaily"
+        ],
+        "Default": "BackupOnceDaily"
+      },
+      "ENV": {
+        "Description": "Environment Staging or Prod",
+        "Type": "String",
+        "Default": "Stage",
+        "AllowedValues": [
+          "Stage",
+          "Prod"
+        ]
+      },
+      "Resource": {
+        "Description": "Resource tag.",
+        "Type": "String",
+        "Default": "Active Directory"
+      }
+    }, 
+    "Resources": {
+      "StorageBackupVault": {
+        "Type": "AWS::Backup::BackupVault",
+        "Properties": {
+          "BackupVaultName": {"Ref" :  "BackupVaultName" },
+          "BackupVaultTags": {
+            "Team": { "Ref" : "Team" },
+            "Email": { "Ref" :  "Email" }
+          },
+          "Tags" : [
+            {
+               "Key" : "Name",
+               "Value" : {"Ref" : "Resource" }
+            },
+            {
+               "Key" : "Environment",
+               "Value" : {"Ref" : "ENV" }
+            }
+         ]
+        }
+      },
+      "StorageBackupPlan": {
+        "Type": "AWS::Backup::BackupPlan",
+        "Properties": {
+          "BackupPlan": {
+            "BackupPlanName": { "Ref" : "BackupPlanName" },
+            "BackupPlanRule": [
+              {
+                "RuleName": {"Ref" : "BackupPolicy"},
+                "TargetBackupVault": [ {"Ref" :  "StorageBackupVault" } , {"Ref": "BackupVaultName" } ],
+                "ScheduleExpression": "cron(0 1 * * ? *)",
+                "Lifecycle": {
+                  "DeleteAfterDays": { "Ref" :  "DeleteAfterDays" }
+                },
+                "RecoveryPointTags": {
+                    "Team": { "Ref" : "Team" },
+                    "Email": { "Ref" :  "Email" }
+                }
+              }
+            ]
+          },
+          "BackupPlanTags": {
+            "Team": { "Ref" : "Team" },
+            "Email": { "Ref" :  "Email" }
+          },
+          "Tags" : [
+            {
+               "Key" : "Name",
+               "Value" : {"Ref" : "Resource" }
+            },
+            {
+               "Key" : "Environment",
+               "Value" : {"Ref" : "ENV" }
+            }
+         ]
+        }
+      },
+      "StorageBackupSelectionByTags": {
+        "Type": "AWS::Backup::BackupSelection",
+        "DependsOn": "StorageBackupPlan",
+        "Properties": {
+          "BackupSelection": {
+            "SelectionName": { "Ref" :  "BackupSelectionName" },
+            "IamRoleArn": { "Ref" : "BackupDefaultRole" },
+            "ListOfTags": [
+              {
+                "ConditionValue": {"Ref" : "BackupSelectionName" }
+              }
+            ]
+          },
+          "BackupPlanId": { "Ref" : "StorageBackupPlan" }
+        },
+        "Tags" : [
+          {
+             "Key" : "Name",
+             "Value" : {"Ref" : "Resource" }
+          },
+          {
+             "Key" : "Environment",
+             "Value" : {"Ref" : "ENV" }
+          }
+       ]
+      }
+    },
+    "Outputs": {
+      "BackupSelectionName": {
+        "Description": "Tag:Value you need to put on your resource along with the Tag:Key Backup",
+        "Value":  { "Ref" : "BackupSelectionName" }
+      },
+      "BackupSelectionId": {
+        "Description": "Backup Selection ID",
+        "Value": { "Ref" : "StorageBackupSelectionByTags" }
+      },
+      "BackupPlanId": {
+        "Description": "BackupPlan ID",
+        "Value": {"Ref" : "StorageBackupPlan" }
+      },
+    }
+  }
