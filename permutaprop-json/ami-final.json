@@ -133,7 +133,9 @@
               "Install-WindowsFeature -name Web-Server -IncludeManagementTools",
               "</powershell>\n"
               "<powershell>\n",
-              "net use DriveLetter: \\amznfsxnncrss6q.corp.permutaprop.com\share"
+              "net use DriveLetter: \\amznfsxnncrss6q.corp.permutaprop.com\/
+              ']
+              share",
               "<powershell>\n",       
             ]
           ]
