@@ -1,0 +1,12 @@
+"permutapropDirectory" : {
+  "Type" : "AWS::DirectoryService::MicrosoftAD",
+  "Properties" : {
+    "Name" : "corp.permutaprop.com",
+    "Password" : { "Ref" : "MicrosoftADPW" },
+    "ShortName" : { "Ref" : "permutaprop" },
+    "VpcSettings" : { 
+      "SubnetIds" : [ { "Ref" : "^(subnet-[0-9a-f]{8}|subnet-[0-9a-f]{17})$" }, { "Ref" : "^(subnet-[0-9a-f]{8}|subnet-[0-9a-f]{17})$" } ],
+      "VpcId" : { "Ref" : "^(vpc-[0-9a-f]{8}|vpc-[0-9a-f]{17})$" }
+    }
+  }
+}

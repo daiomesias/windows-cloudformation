@@ -1,0 +1,124 @@
+    {
+      "AWSTemplateFormatVersion" : "2010-09-09",
+      "Description" : "Create a Microsoft AD Directory Service",
+      "Parameters": {
+        "VPCID": {
+          "Description": "Select VPC used by Microsoft AD.",
+          "Type": "AWS::EC2::VPC::Id"
+        },
+        "Subnets": {
+          "Description": "Select 2 subnets used by Microsoft AD.",
+          "Type": "List<AWS::EC2::Subnet::Id>"
+        },
+        "Edition": {
+          "Description": "Directory Edition(Standard or Enterprise).",
+          "Type": "String",
+          "Default": "Standard",
+          "AllowedValues": [
+            "Standard",
+            "Enterprise "
+          ]
+        },
+        "ENV": {
+          "Description": "Environment Staging or Prod",
+          "Type": "String",
+          "Default": "Stage",
+          "AllowedValues": [
+            "Stage",
+            "Prod"
+          ]
+        },
+        "Resource": {
+          "Description": "Resource tag.",
+          "Type": "String",
+          "Default": "Active Directory"
+        },
+        "DNSName": {
+          "Description": "Directory DNS name.",
+          "Type": "String",
+          "Default": "corp.permutaprop.com"
+        },
+        "NetBIOSName": {
+          "Description": "Directory NetBIOS name.",
+          "Type": "String",
+          "Default": "CORP"
+        },
+        "AdminPassowrd": {
+          "Description": "Password of Admin user.",
+          "Type": "String",
+          "Default": "P@ssw0rd",
+          "NoEcho": true
+        }
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Interface": {
+          "ParameterGroups": [
+            {
+              "Label": {
+                "default": "Network parameters"
+              },
+              "Parameters": [
+                "VPCID",
+                "Subnets"
+              ]
+            },
+            {
+              "Label": {
+                "default": "Directory parameters"
+              },
+              "Parameters": [
+                "Edition",
+                "DNSName",
+                "NetBIOSName",
+                "AdminPassowrd"
+              ]
+            }
+          ]
+        }
+      },
+      "Resources": {
+        "MSAD": {
+          "Type": "AWS::DirectoryService::MicrosoftAD",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "Edition": {
+              "Ref": "Edition"
+            },
+            "Name": {
+              "Ref": "DNSName"
+            },
+            "ShortName": {
+              "Ref": "NetBIOSName"
+            },
+            "Password": {
+              "Ref": "AdminPassowrd"
+            },
+            "VpcSettings": {
+              "SubnetIds": {
+                "Ref": "Subnets"
+              },
+              "VpcId": {
+                "Ref": "VPCID"
+              },
+              "Tags" : [
+                {
+                   "Key" : "Name",
+                   "Value" : {"Ref" : "Resource" }
+                },
+                {
+                   "Key" : "Environment",
+                   "Value" : {"Ref" : "ENV" }
+                }
+             ]
+            }
+          }
+        }
+      },
+      "Outputs" : {
+        "Outdata" : {
+         "Description" : "MS AD Output data",
+         "Value" : "MSAD"    
+              } 
+          }  
+      }
+    

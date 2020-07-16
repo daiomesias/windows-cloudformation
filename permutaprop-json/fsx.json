@@ -1,0 +1,110 @@
+{   
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Parameters": {
+        "VPCID": {
+            "Description": "Select VPC used by fsx.",
+            "Type": "AWS::EC2::VPC::Id"
+          },
+          "Subnets": {
+            "Description": "Select 2 subnets used by fsx.",
+            "Type": "List<AWS::EC2::Subnet::Id>"
+          },
+          "Subnetpre": {
+            "ConstraintDescription": "Select just one prefered subnet",
+            "Description": "Select just one prefered subnet",
+            "Type": "String"
+          },
+          "SGID": {
+            "Description": "Select Security Groups used by fsx",
+            "Type": "List<AWS::EC2::SecurityGroup::Id>"
+          },
+          "ADID": {
+            "ConstraintDescription": "Insert Directory ID inside Directory Service ",
+            "Type": "String",
+            "Default" : "d-9267035651"
+          },
+          "ENV": {
+            "Description": "Environment Staging or Prod",
+            "Type": "String",
+            "Default": "Stage",
+            "AllowedValues": [
+              "Stage",
+              "Prod"
+            ]
+          },
+          "Resource": {
+            "Description": "Resource tag.",
+            "Type": "String",
+            "Default": "fsX filesystem"
+          }
+        }, 
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+          "ParameterGroups": [
+            {
+              "Label": {
+                "default": "Network parameters"
+              },
+              "Parameters": [
+                "VPCID",
+                "Subnets",
+                "SGID"
+              ]
+            },
+            {
+              "Label": {
+                "default": "Directory parameters"
+              },
+              "Parameters": [
+                "SGID"
+              ]
+            }
+          ]
+        }
+      },
+            "Resources": {
+            "permutaFilesystem": {
+                "Type": "AWS::FSx::FileSystem",
+                "Properties": {
+                    "FileSystemType": "WINDOWS",
+                    "StorageCapacity": 100,
+                    "StorageType": "SSD",
+                    "SubnetIds": {
+                        "Ref": "Subnets"
+                      },
+                    "SecurityGroupIds": { "Ref" : "SGID" },
+                    "Tags" : [
+                      {
+                         "Key" : "Name",
+                         "Value" : {"Ref" : "Resource" }
+                      },
+                      {
+                         "Key" : "Environment",
+                         "Value" : {"Ref" : "ENV" }
+                      }
+                   ],
+                    "WindowsConfiguration": {
+                        "ActiveDirectoryId":  { "Ref": "ADID" },
+                        "ThroughputCapacity": 8,
+                        "WeeklyMaintenanceStartTime": "4:16:30",
+                        "DailyAutomaticBackupStartTime": "01:00",
+                        "AutomaticBackupRetentionDays": 2,
+                        "CopyTagsToBackups": false,
+                        "DeploymentType": "MULTI_AZ_1",
+                        "BackupRetentionPeriod": "14",
+                        "PreferredSubnetId": {
+                            "Ref": "Subnetpre"
+                        }
+                    }
+                }
+            }
+        },
+        "Outputs": {
+            "FileSystemId": {
+                "Value": {
+                    "Ref": "permutaFilesystem"
+                }
+            }
+        }
+    }
+

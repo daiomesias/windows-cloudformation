@@ -1,0 +1,69 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+   "Description" : "Mi primera instancia test",
+   "Parameters" : {
+   "IdImagen" : {
+    "Type" : "String",
+    "Description" : "Imagen para la instancia en este caso amazon linux 2 ami-0e34e7b9ca0ace12d",
+    "AllowedValues" : [ "ami-0e34e7b9ca0ace12d" , "ami-f4e6da91" ],
+    "Default" : "ami-0e34e7b9ca0ace12d"  
+   },
+   "TipoInstancia": {
+     "Type" : "String",
+     "Description": "tipo de instancia",
+     "AllowedValues" : [ "t2.micro", "t2.small" ],
+     "Default" : "t2.micro"  
+},
+"ParClave" : {
+  "Type" : "AWS::EC2::KeyPair::KeyName",
+  "Description" : "KeyPair para acceder a instancia" , 
+  "AllowedPattern" : ".+",
+  "ConstraintDescription" : "Es obligatorio seleccionar un KeyPair, default  permutaprop-key", 
+  "Default" : "permutaprop-key"  
+  }
+},
+   "Resources" : {
+      "Instancia1" : {
+         "Type" : "AWS::EC2::Instance",   
+        "Properties" : {
+          "ImageId" : { "Ref": "IdImagen" },
+          "InstanceType" : { "Ref" : "TipoInstancia" },
+          "KeyName" : { "Ref" : "ParClave" },
+          "AvailabilityZone" : "us-west-2c",
+          "UserData": {
+            "Fn::Base64" : {
+              "Fn::Join" : ["\n", [ "#!/bin/bash -xe",
+                                    "while [ ! -e /dev/sdb ]; do echo Esperando al disco; sleep 10; done",
+                                    "mkfs.ext3 /dev/sdb",
+                                    "echo '/dev/sdb /mnt/ ext3 defaults,auto 0 0' >> /etc/fstab",
+                                    "mount /mnt" ]
+                           ]
+      }
+    }
+  }
+},
+"MiVolumen": {
+  "Type": "AWS::EC2::Volume",
+  "Properties" : {
+    "AvailabilityZone" : { "Fn::GetAtt": [ "Instancia1", "AvailabilityZone" ] },
+    "Size": "1",
+    "VolumeType": "gp2"
+  }
+},
+"MiVolumenMontaje": {
+  "Type" : "AWS::EC2::VolumeAttachment",
+  "Properties" : {
+    "InstanceId" : { "Ref" : "Instancia1" },
+    "VolumeId"  : { "Ref" : "MiVolumen" },
+    "Device" : "/dev/sdb"
+    }
+  }
+},
+   "Outputs" : {
+      "IpPublica" : {
+       "Description" : "Ip Publca de la instancia",
+       "Value" : { "Fn::GetAtt": [ "Instancia1", "PublicIp" ]    
+            } 
+        }  
+    }
+}

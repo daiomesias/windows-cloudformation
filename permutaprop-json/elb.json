@@ -1,0 +1,29 @@
+"Scaling": {
+    "Type": "AWS::AutoScaling::AutoScalingGroup",
+    "Properties": {
+      "AvailabilityZones": [ { "Ref": "AZONE" } ],
+      "LaunchConfigurationName": { "Ref" : "Instances" },
+      "MinSize": { "Ref": "InstanceNumber" },
+      "MaxSize": { "Ref": "InstanceNumber" },
+      "LoadBalancerNames": [ { "Ref": "Balancer" } ]
+    }
+  },
+  "Balancer": {
+  "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+  "Properties": {
+    "AvailabilityZones": [ { "Ref": "AZONE" } ],
+    "Listeners": [
+      {
+        "LoadBalancerPort": "80",
+        "InstancePort": "80",
+        "Protocol": "TCP",
+        "InstanceProtocol" : "TCP"
+      }
+    ],
+    "HealthCheck": {
+      "Target": "TCP:80",
+      "HealthyThreshold": "2",
+      "UnhealthyThreshold": "2",
+      "Interval": "10",
+      "Timeout": "5"
+    }

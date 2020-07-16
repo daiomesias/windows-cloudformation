@@ -1,0 +1,20 @@
+#create table
+CREATE TABLE `table1` (
+  `userid` int(11) NOT NULL auto_increment,
+  `username` varchar(30) NOT NULL,
+  `panerexternalid` varchar(300) NOT NULL,
+  PRIMARY KEY  (`userid`)
+) CHARACTER SET `utf8`;
+
+#insert into table
+INSERT INTO table(username,priority)
+VALUES('pedrosh',1);
+
+
+#update row
+UPDATE table1
+SET 
+    panerexternalid= 020202020202
+WHERE
+    userid = 1;
+
