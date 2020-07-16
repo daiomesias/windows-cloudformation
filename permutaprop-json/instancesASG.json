@@ -1,0 +1,131 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Description" : "Autoscaling with ELB",
+    "Parameters": {
+      "TipoInstancia": {
+        "Type": "String",
+        "Description": "Instance Type",
+        "AllowedValues": [ "t2.micro", "m5.large" ],
+        "Default": "m5.large"
+      },
+      "InstanceNumber" : {
+        "Type": "String",
+        "Description": "ASG Instance Number",
+        "AllowedValues" : [ "1", "2", "3", "4", "5", "6", "7", "8", "9"  ],
+        "Default": "1"
+      },
+      "KeyPair": {
+        "Type": "AWS::EC2::KeyPair::KeyName",
+        "Description": "KeyPair for the instance",
+        "AllowedPattern" : ".+",
+        "ConstraintDescription": "Mandatory use of KeyPair"
+      },
+      "AZ": {
+        "Type": "String",
+        "Description": "AvailabilityZone",
+        "AllowedPattern" : ".+",
+        "ConstraintDescription": "Mandatory use of K AZ",
+        "Default": "us-west-2c"
+      },
+      "AZ2": {
+        "Type": "String",
+        "Description": "AvailabilityZone",
+        "AllowedPattern" : ".+",
+        "ConstraintDescription": "Mandatory use of K AZ",
+        "Default": "us-west-2a"
+      }
+    },
+    "Resources": {
+      "LaunchConfig": {
+        "Type": "AWS::AutoScaling::LaunchConfiguration",
+        "Metadata": {
+          "AWS::CloudFormation::Init": {
+          }
+        },
+        "Properties": {
+          "ImageId": "ami-009d6f99e44f51242",
+          "InstanceType": { "Ref": "InstanceType" },
+          "KeyName": { "Ref": "KeyPair" },
+          "UserData": {
+            "Fn::Base64": {
+              "Fn::Join": [
+                "",
+                [
+                  "<powershell>\n",
+                  "Rename-Computer PPROP$AWSEc2Id -force -restart"
+                  "<powershell>\n",
+                  
+                  //trunca el string hasta PPROP040620a047 solo toma 10 numeros
+
+                  //agregarla a DOMAIN
+
+                   "<powershell>\n",
+                   "$domain = 'corp.permutaprop.com'",
+                   "$password = '$ADPassword' | ConvertTo-SecureString -asPlainText -Force",
+                   "$username = 'CORP\Admin'", 
+                   "$credential = New-Object System.Management.Automation.PSCredential($username,$password)",
+                   "Add-Computer -DomainName $domain -Credential $credential -force -restart",
+                   "<powershell>\n",
+
+                   //prender IIS y Apache2.4
+
+                   //Prender IIS
+                  "<powershell>\n", 
+                  "Get-IISSite | Start-IISSite",
+                  // Prender Apache2.4
+                  "Set-Service Apache2.4 -StartupType Automatic",
+                  "Start-Service Apache2.4",
+                  "<powershell>\n"       
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "GrupoEscalado": {
+        "Type": "AWS::AutoScaling::AutoScalingGroup",
+        "Properties": {
+          "AvailabilityZones": [ { "Ref": "AZ" } ],
+          "LaunchConfigurationName": { "Ref" : "LaunchConfig" },
+          "MinSize": { "Ref": "InstanceNumber" },
+          "MaxSize": { "Ref": "InstanceNumber" },
+          "LoadBalancerNames": [ { "Ref": "Balancer" } ]
+        }
+      },
+      "Balancer": {
+        "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+        "Properties": {
+          "AvailabilityZones": [ { "Ref": "AZ" } ],
+          "Listeners": [
+            {
+              "LoadBalancerPort": "80",
+              "InstancePort": "80",
+              "Protocol": "TCP",
+              "InstanceProtocol" : "TCP"
+            }
+          ],
+          "HealthCheck": {
+            "Target": "TCP:80",
+            "HealthyThreshold": "2",
+            "UnhealthyThreshold": "2",
+            "Interval": "10",
+            "Timeout": "5"
+          }
+        }
+      }
+    },
+    "Outputs": {
+      "URLBalancer": {
+        "Description" : "Balancer",
+        "Value" : {
+          "Fn::Join": [
+            "",
+            [ "http://", "Fn::GetAtt": [ "Balancer" , "DNSName"  ] ]
+          ]
+        }
+      }
+    }
+}
+
+  
+  
