@@ -50,11 +50,11 @@
       "Type": "String",
       "Default" : "d-9267035651"
     },
-    "AZONE" : {
-      "ConstraintDescription": "Insert Availability Zone",
-      "Type": "String",
-      "Default" : "us-west-2a"
-      }
+      "AZONE" : {
+        "ConstraintDescription": "Insert Availability Zone",
+        "Type": "String",
+        "Default" : "us-west-2a"
+        }
     },
     "Metadata": {
       "AWS::CloudFormation::Interface": {
@@ -293,7 +293,8 @@
                 "",
                 [
                   "<powershell>\n",
-                  "Rename-Computer PPROP{ 'Ref': 'EC2Instance' } -force -restart",
+                  "$instanceID = invoke-restmethod -uri http://169.254.169.254/latest/meta-data/instance-id"
+                  "Rename-Computer $instanceID -force -restart",
                   "<powershell>\n",
                    "<powershell>\n",
                    "$domain = 'corp.permutaprop.com'",
@@ -307,8 +308,8 @@
                   "Set-Service Apache2.4 -StartupType Automatic",
                   "Start-Service Apache2.4",
                   "<powershell>\n"       
-                 ] 
-               ]
+                 ]
+                ]
              }
            }
          }
