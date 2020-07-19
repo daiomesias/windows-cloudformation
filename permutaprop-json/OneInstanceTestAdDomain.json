@@ -1,0 +1,336 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+   "Description" : "Test One Instance",
+   "Parameters" : {
+   "ImageIDA" : {
+    "Type" : "String",
+    "Description" : "Image for the instances: windows 2019 ami-0cb8c277ab5436fac, windows 2017 Standard SQL ami-09bd10a0fa6dfcd7b",
+    "AllowedValues" : [ "ami-009d6f99e44f51242" , "ami-0cb8c277ab5436fac" ],
+    "Default" : "ami-009d6f99e44f51242"  
+   },
+   "InstanceType": {
+     "Type" : "String",
+     "Description": "Instance Type",
+     "AllowedValues" : [ "t2.micro", "m5.large" ],
+     "Default" : "t2.micro"  
+  },
+  "InstanceNumber" : {
+  "Type": "String",
+  "Description": "Number of instances for autoscaling",
+  "AllowedValues" : [ "1", "2" ],
+  "Default": "1"
+  },
+  "KeyPair" : {
+  "Type" : "AWS::EC2::KeyPair::KeyName",
+  "Description" : "KeyPair to access" , 
+  "AllowedPattern" : ".+",
+  "ConstraintDescription" : "KeyPair is mandatory, default  permutaprop-key", 
+  "Default" : "permutaprop-key"  
+  },
+  "RoleName" : {
+    "Description" : "Role description",
+    "Type" : "String",
+    "Default" : "arn:aws:iam::673501758087:role/EC2DomainJoin",
+    "ConstraintDescription" : "Must be a valid IAM Role"
+  },
+  "ADPassword" : {
+    "Description" : "AD Password",
+    "Type" : "String",
+    "ConstraintDescription" : "Must be the Domain Password"
+  },
+  "AZONE" : {
+    "ConstraintDescription": "Insert Availability Zone",
+    "Type": "String",
+    "Default" : "us-west-2d"
+    }
+},
+  "Resources": {
+    "MyVPC" : {
+        "Type" : "AWS::EC2::VPC",
+        "Properties" : {
+           "CidrBlock" : "10.9.0.0/16",
+           "EnableDnsSupport" : "false",
+           "EnableDnsHostnames" : "false",
+           "InstanceTenancy" : "dedicated",
+           "Tags" : [ {"Key" : "Name", "Value" : "VPCTestPermutaProp"} ]
+        }
+     },
+      
+    "SGpermutapropTest" : {
+        "Properties": {
+          "GroupDescription": "This is the security group for the test instance",
+          "SecurityGroupIngress": [
+            {
+                "CidrIp": "181.167.0.0/16",
+                "FromPort": "3389",
+                "IpProtocol": "tcp",
+                "ToPort": "3389"
+              },
+              {
+                "CidrIp": "201.213.72.0/24",
+                "FromPort": "3389",
+                "IpProtocol": "tcp",
+                "ToPort": "3389"
+              },            
+              {
+                "CidrIp": "190.18.0.0/16",
+                "FromPort": "3389",
+                "IpProtocol": "tcp",
+                "ToPort": "3389"
+              },
+              {
+                "CidrIp": "181.228.164.94/32",
+                "FromPort": "3389",
+                "IpProtocol": "tcp",
+                "ToPort": "3389"
+              },
+              {
+                "CidrIp": "200.127.62.0/24",
+                "FromPort": "3389",
+                "IpProtocol": "tcp",
+                "ToPort": "3389"
+              },
+              {
+                "CidrIp": "181.28.77.0/24",
+                "FromPort": "3389",
+                "IpProtocol": "tcp",
+                "ToPort": "3389"
+              },
+              {
+                "CidrIp": "181.167.0.0/16",
+                "FromPort": "80",
+                "IpProtocol": "tcp",
+                "ToPort": "80"
+              },
+              {
+                "CidrIp": "201.213.72.0/24",
+                "FromPort": "80",
+                "IpProtocol": "tcp",
+                "ToPort": "80"
+              },            
+              {
+                "CidrIp": "190.18.0.0/16",
+                "FromPort": "80",
+                "IpProtocol": "tcp",
+                "ToPort": "80"
+              },
+              {
+                "CidrIp": "181.228.164.94/32",
+                "FromPort": "80",
+                "IpProtocol": "tcp",
+                "ToPort": "80"
+              },
+              {
+                "CidrIp": "200.127.62.0/24",
+                "FromPort": "80",
+                "IpProtocol": "tcp",
+                "ToPort": "80"
+              },
+              {
+                "CidrIp": "181.28.77.0/24",
+                "FromPort": "80",
+                "IpProtocol": "tcp",
+                "ToPort": "80"
+              },
+              {
+                "CidrIp": "181.167.0.0/16",
+                "FromPort": "443",
+                "IpProtocol": "tcp",
+                "ToPort": "443"
+              },
+              {
+                "CidrIp": "201.213.72.0/24",
+                "FromPort": "443",
+                "IpProtocol": "tcp",
+                "ToPort": "443"
+              },            {
+                "CidrIp": "190.18.0.0/16",
+                "FromPort": "443",
+                "IpProtocol": "tcp",
+                "ToPort": "443"
+              },
+              {
+                "CidrIp": "181.228.164.94/32",
+                "FromPort": "443",
+                "IpProtocol": "tcp",
+                "ToPort": "443"
+              },
+              {
+                "CidrIp": "200.127.62.0/24",
+                "FromPort": "443",
+                "IpProtocol": "tcp",
+                "ToPort": "443"
+              },
+              {
+                "CidrIp": "181.28.77.0/24",
+                "FromPort": "443",
+                "IpProtocol": "tcp",
+                "ToPort": "443"
+              },
+              {
+                "CidrIp": "181.167.0.0/16",
+                "FromPort": "21000",
+                "IpProtocol": "tcp",
+                "ToPort": "21000"
+              },
+              {
+                "CidrIp": "201.213.72.0/24",
+                "FromPort": "21000",
+                "IpProtocol": "tcp",
+                "ToPort": "21000"
+              },            {
+                "CidrIp": "190.18.0.0/16",
+                "FromPort": "21000",
+                "IpProtocol": "tcp",
+                "ToPort": "21000"
+              },
+              {
+                "CidrIp": "181.228.164.94/32",
+                "FromPort": "21000",
+                "IpProtocol": "tcp",
+                "ToPort": "21000"
+              },
+              {
+                "CidrIp": "200.127.62.0/24",
+                "FromPort": "21000",
+                "IpProtocol": "tcp",
+                "ToPort": "21000"
+              },
+              {
+                "CidrIp": "181.28.77.0/24",
+                "FromPort": "21000",
+                "IpProtocol": "tcp",
+                "ToPort": "21000"
+              },  
+            {
+              "CidrIp": "10.9.0.0/16",
+              "FromPort": "0",
+              "IpProtocol": "tcp",
+              "ToPort": "65535"
+            },
+            {
+              "CidrIp": "10.9.0.0/16",
+              "FromPort": "0",
+              "IpProtocol": "udp",
+              "ToPort": "65535"
+            },
+            {
+              "CidrIp": "10.9.0.0/16",
+              "FromPort": "-1",
+              "IpProtocol": "icmp",
+              "ToPort": "-1"
+            }
+          ], 
+          "SecurityGroupEgress": [
+            {
+              "CidrIp": "10.9.0.0/16",
+              "FromPort": "-1",
+              "IpProtocol": "icmp",
+              "ToPort": "-1"
+            },
+            {
+              "CidrIp": "0.0.0.0/0",
+              "FromPort": "80",
+              "IpProtocol": "tcp",
+              "ToPort": "80"
+            },
+            {
+              "CidrIp": "0.0.0.0/0",
+              "FromPort": "443",
+              "IpProtocol": "tcp",
+              "ToPort": "443"
+            }
+          ],
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": "SGpermutapropTest"
+            }
+          ],
+          "VpcId": {
+            "Ref": "MyVPC"
+          }
+        },
+        "Type": "AWS::EC2::SecurityGroup"
+    },
+
+    "EC2Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType" : { "Ref" : "InstanceType" },
+        "IamInstanceProfile"  : { "Ref" : "RoleName" },
+        "KeyName" : { "Ref" : "KeyPair" },
+        "ImageId" : { "Ref" : "ImageIDA" },
+        "UserData": {
+            "Fn::Base64": {
+              "Fn::Join": [
+                "",
+                [
+                  "<powershell>\n",
+                  "Rename-Computer PPROP{ 'Ref': 'EC2Instance' } -force -restart",
+                  "<powershell>\n",
+                   "<powershell>\n",
+                   "$domain = 'corp.permutaprop.com'",
+                   "$password = ' { 'Ref': 'ADPassword' }' | ConvertTo-SecureString -asPlainText -Force",
+                   "$username = 'Admin'", 
+                   "$credential = New-Object System.Management.Automation.PSCredential($username,$password)",
+                   "Add-Computer -DomainName $domain -Credential $credential -force -restart",
+                   "<powershell>\n",
+                  "<powershell>\n", 
+                  "Get-IISSite | Start-IISSite",
+                  "Set-Service Apache2.4 -StartupType Automatic",
+                  "Start-Service Apache2.4",
+                  "<powershell>\n"       
+                 ] 
+               ]
+             }
+           }
+         }
+       },
+       "myInstanceProfile" : {
+        "Type": "AWS::IAM::InstanceProfile",
+        "Properties": {
+           "Roles": [ "RoleName" ],
+           "InstanceProfileName": "myEC2SSMRole"
+        }
+      },
+      
+         "myEC2SSMRole" :{
+         "Type": "AWS::IAM::Role",
+         "Properties": {
+           "AssumeRolePolicyDocument": {
+                    "Version" : "2012-10-17",
+                    "Statement": [ {
+                       "Effect": "Allow",
+                       "Principal": {
+                          "Service": [ "ec2.amazonaws.com" ]
+                       },
+                       "Action": [ "sts:AssumeRole" ]
+                    } ]
+                 },
+           "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"],
+           "RoleName": "RoleName"
+         }
+       }
+    },
+            "Outputs": {
+              "InstanceId": {
+                "Description": "InstanceId of the newly created EC2 instance",
+                "Value":  { "Ref" : "EC2Instance" }
+              },
+              "AZ": {
+                "Description": "Availability Zone of the newly created EC2 instance",
+                "Value": { "Fn::GetAtt" : [ "EC2Instance", "AvailabilityZone" ] }
+              },
+              "PublicDNS": {
+                "Description": "Public DNSName of the newly created EC2 instance",
+                "Value": { "Fn::GetAtt" : [ "EC2Instance" , "PublicDnsName" ] }
+              },
+              "PublicIP": {
+                "Description": "Public IP address of the newly created EC2 instance",
+                "Value": { "Fn::GetAtt" : [ "EC2Instance" , "PublicIp" ] }
+              }
+            }
+          
+
+  }

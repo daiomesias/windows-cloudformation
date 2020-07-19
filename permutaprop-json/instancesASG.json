@@ -24,14 +24,14 @@
         "Type": "String",
         "Description": "AvailabilityZone",
         "AllowedPattern" : ".+",
-        "ConstraintDescription": "Mandatory use of K AZ",
+        "ConstraintDescription": "Mandatory use of AZ",
         "Default": "us-west-2c"
       },
       "AZ2": {
         "Type": "String",
         "Description": "AvailabilityZone",
         "AllowedPattern" : ".+",
-        "ConstraintDescription": "Mandatory use of K AZ",
+        "ConstraintDescription": "Mandatory use of AZ",
         "Default": "us-west-2a"
       }
     },
@@ -52,7 +52,7 @@
                 "",
                 [
                   "<powershell>\n",
-                  "Rename-Computer PPROP$AWSEc2Id -force -restart"
+                  "Rename-Computer PPROP$AWSEc2Id -force -restart",
                   "<powershell>\n",
                   
                   //trunca el string hasta PPROP040620a047 solo toma 10 numeros
@@ -62,7 +62,7 @@
                    "<powershell>\n",
                    "$domain = 'corp.permutaprop.com'",
                    "$password = '$ADPassword' | ConvertTo-SecureString -asPlainText -Force",
-                   "$username = 'CORP\Admin'", 
+                   "$username = 'Admin'", 
                    "$credential = New-Object System.Management.Automation.PSCredential($username,$password)",
                    "Add-Computer -DomainName $domain -Credential $credential -force -restart",
                    "<powershell>\n",

@@ -24,7 +24,31 @@
 # #aws ec2 describe-snapshots --filters Name=status,Values=completed --query "Snapshots[*].{ID:SnapshotId,Time:StartTime}" 
 # #aws ec2 describe-snapshots --filters Name=status,Values=completed --query Snapshots[?StartTime\<=\`$datetrim\`]
 
+# Delete files older than iRetentionDays
 
+37
+
+snapshot de un dia
+
+ultima hora divida en 6
+24 horas, 24 snapshots
+7 Dias
+
+iRetentionDays = 7 ( probable que sean 8)
+
+aws ec2 describe-snapshots --filters Name=status,Values=completed --query "Snapshots[*].{ID:SnapshotId,Time:StartTime}" 
+/root/.local/bin/aws s3 ls --recursive s3://$sBucketName/$sPath/ | while read -r sFile; do
+	dCreatedAt=$(echo $sFile | awk {'print $1'})
+	dCreatedAt=$(date -d "$dCreatedAt" +%s)
+	dOldestDate=$(date -d "$iRetentionDays days ago" +%s)
+	if [[ $dCreatedAt -lt $dOldestDate ]]; then
+		fileName=$(echo $sFile | awk {'print $4'})
+		if [[ $fileName != "" ]]; then
+        aws ec2 delete-snapshot --region $region --snapshot-id $snapToDelete --dry-run
+			/root/.local/bin/aws s3 rm --quiet s3://$sBucketName/$sPath/$fileName
+		fi
+	fi
+done;
 
 
 
