@@ -293,7 +293,36 @@
                 "",
                 [
                   "<powershell>\n",
-                  "$instanceID = invoke-restmethod -uri http://169.254.169.254/latest/meta-data/instance-id"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$password = "" | ConvertTo-SecureString -asPlainText -Force  
+$username = "Admin" 
+$credential = New-Object
+System.Management.Automation.PSCredential($username,$password)
+Rename-Computer -ComputerName $currentHostName -NewName $instanceID -Force -Restart
+$currentHostName = hostname                  
+$instanceID = invoke-restmethod -uri http://169.254.169.254/latest/meta-data/instance-id
+                  Rename-Computer -ComputerName $currentHostName -NewName $instanceID -Force -Restart
                   "Rename-Computer $instanceID -force -restart",
                   "<powershell>\n",
                    "<powershell>\n",

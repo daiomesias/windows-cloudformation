@@ -1,0 +1,165 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+   "Description" : "Create an OpenVPN Instance based on openvpnas AMI",
+   "Parameters" : {
+   "ImageID" : {
+    "Type" : "String",
+    "Description" : "Openvpn AS manually created AMI",
+    "AllowedValues" : [ "ami-07ceb202d401f486b" , "ami-f4e6da91" ],
+    "Default" : "ami-07ceb202d401f486b"  
+   },
+   "InstanceType": {
+     "Type" : "String",
+     "Description": "tipo de instancia",
+     "AllowedValues" : [ "t2.micro", "t2.small" ],
+     "Default" : "t2.small"  
+},
+"KeyPair" : {
+  "Type" : "AWS::EC2::KeyPair::KeyName",
+  "Description" : "KeyPair to access the server" , 
+  "AllowedPattern" : ".+",
+  "ConstraintDescription" : "KeyPair Mandatory", 
+  "Default" : "OpenvpnASPPROP"  
+  },
+  "VPCID": {
+    "Description": "Select VPC used by OpenVPN.",
+    "Type": "AWS::EC2::VPC::Id"
+  },
+  "Subnets": {
+    "Description": "Select subnet used by openvpn",
+    "Type" : "List<AWS::EC2::Subnet::Id>"
+  },
+  "SubnetA": {
+    "Description": "Select 2 subnets used by ec2.",
+    "Type": "String",
+    "Default" : "subnet-dba566a3"
+  },
+  "SubnetB": {
+    "Description": "Select  subnets used by ec2.",
+    "Type": "String",
+    "Default" : "subnet-e811fca2"
+  }
+},
+"Metadata": {
+  "AWS::CloudFormation::Interface": {
+    "ParameterGroups": [
+      {
+        "Label": {
+          "default": "Network parameters"
+        },
+        "Parameters": [
+          "VPCID",
+          "Subnets",
+          "SubnetA",
+          "SubnetB"
+
+        ]
+      }
+    ]
+  }
+},
+   "Resources" : {
+    "OpenvpnSG" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+         "GroupDescription" : "Allow http to client host",
+         "VpcId" : {"Ref" : "VPCID"},
+         "SecurityGroupIngress" : [
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "0",
+            "IpProtocol": "tcp",
+            "ToPort": "65535"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "0",
+            "IpProtocol": "udp",
+            "ToPort": "65535"
+          },
+          {
+            "CidrIp": "181.167.0.0/16",
+            "FromPort": "1194",
+            "IpProtocol": "tcp",
+            "ToPort": "1194"
+          },
+          {
+            "CidrIp": "201.213.72.0/24",
+            "FromPort": "1194",
+            "IpProtocol": "tcp",
+            "ToPort": "1194"
+          },            
+          {
+            "CidrIp": "190.18.0.0/16",
+            "FromPort": "1194",
+            "IpProtocol": "tcp",
+            "ToPort": "1194"
+          },
+          {
+            "CidrIp": "181.228.164.94/32",
+            "FromPort": "1194",
+            "IpProtocol": "tcp",
+            "ToPort": "1194"
+          },
+          {
+            "CidrIp": "200.127.62.0/24",
+            "FromPort": "1194",
+            "IpProtocol": "tcp",
+            "ToPort": "1194"
+          },
+          {
+            "CidrIp": "181.28.77.0/24",
+            "FromPort": "1194",
+            "IpProtocol": "tcp",
+            "ToPort": "1194"
+          },
+        ],
+         "SecurityGroupEgress" : [
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "0",
+            "IpProtocol": "tcp",
+            "ToPort": "65535"
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": "1194",
+            "IpProtocol": "tcp",
+            "ToPort": "1194"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "0",
+            "IpProtocol": "udp",
+            "ToPort": "65535"
+          }
+        ]
+      }
+   },
+
+
+
+      "OpenvpnInstance" : {
+         "Type" : "AWS::EC2::Instance",   
+        "Properties" : {
+          "ImageId" : { "Ref": "ImageID" },
+          "InstanceType" : { "Ref" : "InstanceType" },
+          "KeyName" : { "Ref" : "KeyPair" },
+          "SecurityGroupIds": [{ "Ref" : "OpenvpnSG" }],
+          "SubnetId": {"Ref": "SubnetA"}  
+        }
+
+        cambiar passwd user "openvpn"
+        dejar abierto puerto 943 para "cliente"
+        abierto ssh o ver de como autocargar el file de "license" para "config"
+        chequear si funciona bien....
+    }
+},
+   "Outputs" : {
+      "PublicIP" : {
+       "Description" : "Public IP address for OPENVPNAS",
+       "Value" : { "Fn::GetAtt": [ "OpenvpnInstance", "PublicIp" ]    
+            } 
+        } 
+    }
+}
