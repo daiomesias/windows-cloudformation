@@ -30,14 +30,34 @@
     "Type" : "List<AWS::EC2::Subnet::Id>"
   },
   "SubnetA": {
-    "Description": "Select 2 subnets used by ec2.",
+    "Description": "Select subnet used by ec2.",
     "Type": "String",
     "Default" : "subnet-dba566a3"
   },
   "SubnetB": {
-    "Description": "Select  subnets used by ec2.",
+    "Description": "Select  subnet used by ec2.",
     "Type": "String",
     "Default" : "subnet-e811fca2"
+  },
+  "OpenVPNASAdminUser": {
+    "Description": "Select Admin User",
+    "Type": "String",
+    "Default" : "AdminPProp"
+  },
+  "TagPrefixer": {
+    "Description": "Tag Openvpn",
+    "Type": "String",
+    "Default" : "OpenVPN"
+  },
+  "OpenVPNASDNSName": {
+    "Description": "FQDN Openvpn",
+    "Type": "String",
+    "Default" : "vpn.permutaprop.com.ar"
+  },
+  "OpenVPNSSMSecretString": {
+    "Description": "password Openvpn",
+    "Type": "String",
+    "Default" : "password Openvpn"
   }
 },
 "Metadata": {
@@ -79,56 +99,56 @@
           },
           {
             "CidrIp": "181.167.0.0/16",
-            "FromPort": "1194",
+            "FromPort": "943",
             "IpProtocol": "tcp",
-            "ToPort": "1194"
+            "ToPort": "943"
           },
           {
             "CidrIp": "201.213.72.0/24",
-            "FromPort": "1194",
+            "FromPort": "943",
             "IpProtocol": "tcp",
-            "ToPort": "1194"
+            "ToPort": "943"
           },            
           {
             "CidrIp": "190.18.0.0/16",
-            "FromPort": "1194",
+            "FromPort": "943",
             "IpProtocol": "tcp",
-            "ToPort": "1194"
+            "ToPort": "943"
           },
           {
             "CidrIp": "181.228.164.94/32",
-            "FromPort": "1194",
+            "FromPort": "943",
             "IpProtocol": "tcp",
-            "ToPort": "1194"
+            "ToPort": "943"
           },
           {
             "CidrIp": "200.127.62.0/24",
-            "FromPort": "1194",
+            "FromPort": "943",
             "IpProtocol": "tcp",
-            "ToPort": "1194"
+            "ToPort": "943"
           },
           {
             "CidrIp": "181.28.77.0/24",
-            "FromPort": "1194",
+            "FromPort": "943",
             "IpProtocol": "tcp",
-            "ToPort": "1194"
+            "ToPort": "943"
           },
+          {
+            "CidrIp": "200.127.62.0/24",
+            "FromPort": "22",
+            "IpProtocol": "tcp",
+            "ToPort": "22"
+          }
         ],
          "SecurityGroupEgress" : [
           {
-            "CidrIp": "172.31.0.0/16",
+            "CidrIp": "0.0.0.0/0",
             "FromPort": "0",
             "IpProtocol": "tcp",
             "ToPort": "65535"
           },
           {
             "CidrIp": "0.0.0.0/0",
-            "FromPort": "1194",
-            "IpProtocol": "tcp",
-            "ToPort": "1194"
-          },
-          {
-            "CidrIp": "172.31.0.0/16",
             "FromPort": "0",
             "IpProtocol": "udp",
             "ToPort": "65535"
@@ -140,20 +160,135 @@
 
 
       "OpenvpnInstance" : {
-         "Type" : "AWS::EC2::Instance",   
-        "Properties" : {
-          "ImageId" : { "Ref": "ImageID" },
-          "InstanceType" : { "Ref" : "InstanceType" },
-          "KeyName" : { "Ref" : "KeyPair" },
-          "SecurityGroupIds": [{ "Ref" : "OpenvpnSG" }],
-          "SubnetId": {"Ref": "SubnetA"}  
-        }
-
-        cambiar passwd user "openvpn"
-        dejar abierto puerto 943 para "cliente"
-        abierto ssh o ver de como autocargar el file de "license" para "config"
-        chequear si funciona bien....
-    }
+         "Type" : "AWS::EC2::Instance",
+            "Metadata": {
+            "AWS::CloudFormation::Init": {
+              "config": {
+                "commands": {
+                  "a": {
+                    "command": "wget https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/debian_amd64/amazon-ssm-agent.deb",
+                    "cwd": "/tmp"
+                  },
+                  "b": {
+                    "command": "dpkg -i amazon-ssm-agent.deb",
+                    "cwd": "/tmp"
+                  },
+                  "c": {
+                    "command": "systemctl enable amazon-ssm-agent"
+                  },
+                  "d": {
+                    "command": "rm amazon-ssm-agent.deb",
+                    "cwd": "/tmp"
+                  },
+                  "e": {
+                    "command": "/usr/local/openvpn_as/scripts/sacli --key vpn.client.tls_version_min --value 1.2 ConfigPut"
+                  },
+                  "f": {
+                    "command": "/usr/local/openvpn_as/scripts/sacli --key vpn.client.tls_version_min_strict --value true ConfigPut"
+                  },
+                  "g": {
+                    "command": "/usr/local/openvpn_as/scripts/sacli --key vpn.server.tls_version_min --value 1.2 ConfigPut"
+                  },
+                  "h": {
+                    "command": "/usr/local/openvpn_as/scripts/sacli --key cs.tls_version_min --value 1.2 ConfigPut"
+                  },
+                  "i": {
+                    "command": "/usr/local/openvpn_as/scripts/sacli --key cs.tls_version_min_strict --value true ConfigPut"
+                  },
+                  "j": {
+                    "command": "/usr/local/openvpn_as/scripts/sacli --key vpn.client.config_text --value 'cipher AES-256-CBC' ConfigPut"
+                  },
+                  "k": {
+                    "command": "/usr/local/openvpn_as/scripts/sacli --key vpn.server.config_text --value 'cipher AES-256-CBC' ConfigPut"
+                  },
+                  "l": {
+                    "command": "/usr/local/openvpn_as/scripts/sacli start"
+                  },
+                  "m": {
+                    "command": "apt install awscli -y"
+                  },
+                  "n": {
+                    "command": "apt install awscli -y"
+                  },
+                "o": {
+                  "command": "Sub | /usr/local/openvpn_as/scripts/ovpnpasswd -u ${OpenVPNASAdminUser} -p `aws ssm get-parameters --region ${AWS::Region} --names ${OpenVPNSSMSecretString} --with-decryption --output text | cut -f4`"
+                }
+                }
+              }
+            }
+          },
+          "Properties" : {
+            "ImageId" : { "Ref": "ImageID" },
+            "InstanceType" : { "Ref" : "InstanceType" },
+            "KeyName" : { "Ref" : "KeyPair" },
+            "SecurityGroupIds": [{ "Ref" : "OpenvpnSG" }],
+            "SubnetId": {"Ref": "SubnetA"},    
+            "UserData": {
+              "Fn::Base64": "Sub | apt -y update && apt -y upgrade apt-get -y install python-pip pip install awscli public_hostname=${OpenVPNASDNSName} admin_user=${OpenVPNASAdminUser} admin_pw=ChangeMePlease reroute_gw=1 reroute_dns=1 pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz cfn-init -v --stack ${AWS::StackName} --resource OpenVPNASInstance --region ${AWS::Region}"
+            }
+          }
+      },
+            "OpenVPNInstanceRole": {
+              "Type": "AWS::IAM::Role",
+              "Properties": {
+                "RoleName": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "-",
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            {
+                              "Ref": "TagPrefixer"
+                            },
+                            "OPENVPN-AS-INSTANCE-ROLE"
+                          ]
+                        ]
+                      }
+                    ]
+                  ]
+                },
+                "AssumeRolePolicyDocument": {
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": {
+                        "Service": [
+                          "ec2.amazonaws.com",
+                          "ssm.amazonaws.com"
+                        ]
+                      },
+                      "Action": [
+                        "sts:AssumeRole"
+                      ]
+                    }
+                  ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                  "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+                ]
+              }
+            },
+            "OpenVPNInstanceProfile": {
+              "DependsOn": [
+                "OpenVPNInstanceRole"
+              ],
+              "Type": "AWS::IAM::InstanceProfile",
+              "Properties": {
+                "Path": "/",
+                "Roles": [
+                  {
+                    "Ref": "OpenVPNInstanceRole"
+                  }
+                ]
+              }
+            }
 },
    "Outputs" : {
       "PublicIP" : {

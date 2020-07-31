@@ -5,8 +5,8 @@
  "ImageIDA" : {
   "Type" : "String",
   "Description" : "Image for the instances: windows 2019 ami-0cb8c277ab5436fac, windows 2017 Standard SQL ami-09bd10a0fa6dfcd7b",
-  "AllowedValues" : [ "ami-0e744a3826c323a9b" , "ami-04658e7d6043af3aa" ],
-  "Default" : "ami-0e744a3826c323a9b"  
+  "AllowedValues" : [ "ami-0621c9b6514ba3996" , "ami-0ae9c7dd31b7a495b" ],
+  "Default" : "ami-0621c9b6514ba3996"  
  },
  "InstanceType": {
    "Type" : "String",
@@ -63,7 +63,12 @@
   "Default": "us-west-2b",
   "Description": "Name of the second availability zone in which the servers will be created."
 },
-"ADID": {
+"topic1": {
+  "ConstraintDescription": "Insert topic arn",
+  "Type": "String",
+  "Default" : "arn:aws:sns:us-west-2:673501758087:ASGPPROP"
+  },
+  "ADID": {
   "ConstraintDescription": "Insert Directory ID inside Directory Service ",
   "Type": "String",
   "Default" : "d-9267035651"
@@ -377,26 +382,26 @@
       "IamInstanceProfile"  : { "Ref" : "Ec2Role" },
       "KeyName" : { "Ref" : "KeyPair" },
       "ImageId" : { "Ref" : "ImageIDA" },
+      "InstanceMonitoring": true,
       "UserData": {
-          "Fn::Base64": {
-            "Fn::Join": [
-              "",
-              [
-                "<powershell>\n",
-                  "Write-Host 'Script ADD-Computer start'\n",
-                  "$password = (Get-SSMParameterValue -Name ADPassword -WithDecryption $True).Parameters[0].Value | ConvertTo-SecureString -asPlainText -Force\n",
-                  "$user = 'Admin'\n",
-                  "$credential = New-Object System.Management.Automation.PSCredential($user, $password)\n",
-                  "$name = invoke-restmethod -uri http://169.254.169.254/latest/meta-data/instance-id\n",
-                  "Rename-Computer -NewName $name -DomainCredential $credential -force -restart\n",
-                  "Write-Host 'Script ADD-Computer end'\n",
-                  "</powershell>\n"     
-               ]
-              ]
-           }
-         }
-       }
-      },
+        "Fn::Base64": {
+          "Fn::Join": [
+            "",
+            [
+              "<powershell>\n",
+              "$domain = 'corp.permutaprop.com'\n",
+              "$password = (Get-SSMParameterValue -Name ADPassword -WithDecryption $True).Parameters[0].Value | ConvertTo-SecureString -asPlainText -Force \n",
+              "$user = 'Admin'",
+              "$credential = New-Object System.Management.Automation.PSCredential($user, $password) \n",
+              "name = invoke-restmethod -uri http://169.254.169.254/latest/meta-data/instance-id \n",
+              "Add-Computer -DomainName '$domain' -Credential $credential -Passthru -Verbose -Force -Restart \n",
+              "</powershell>\n"    
+             ]
+            ]
+          }
+        }
+      }
+    },
 
      "Ec2Role": {
       "Type": "AWS::IAM::InstanceProfile",
@@ -406,84 +411,99 @@
       }
     },
 
-    "WebServerGroup": {
+    "AutoScalingGroup": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",  
-      "UpdatePolicy" : {
-        "AutoScalingRollingUpdate" : {
-          "MaxBatchSize" : "1",
-          "MinInstancesInService" : "1",
-          "PauseTime" : "PT12M",
-          "WaitOnResourceSignals": "true"
-        }
-      }, 
       "Properties": {
         "AvailabilityZones" : [{ "Ref" : "AZoneA"}, { "Ref" : "AZoneB"}],
         "LaunchConfigurationName": { "Ref" : "EC2Instance" },
         "MinSize": { "Ref": "InstanceMin" },
         "MaxSize": { "Ref": "InstanceMax" },
         "VPCZoneIdentifier" :  { "Ref" : "Subnets" },
-        "TargetGroupARNs": [ { "Ref": "ALBTargetGroup" } ]
-        }
-     
-  },
+        "TargetGroupARNs": [ { "Ref": "ALBTargetGroup" } ],
+        "Cooldown": "300",
+        "HealthCheckType": "EC2",
+        "HealthCheckGracePeriod": "600",
+        "DesiredCapacity":  { "Ref": "InstanceMin" },
+        "NotificationConfigurations" : [
+          {
+            "TopicARN" : { "Ref" : "topic1" },
+            "NotificationTypes" : [
+              "autoscaling:EC2_INSTANCE_LAUNCH",
+              "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+              "autoscaling:EC2_INSTANCE_TERMINATE",
+              "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+            ]
+          }
+        ],
+				"Tags": [{"Key": "Name", "Value": {"Ref": "AWS::StackName"}, "PropagateAtLaunch" : true}]
+			},
+				"UpdatePolicy" : {
+					"AutoScalingRollingUpdate" : {
+						"MinInstancesInService" : "1",
+						"MaxBatchSize" : "1",
+						"PauseTime" : "PT15M"					
+				}
+			}
+		},
 
-  "WebServerScaleUpPolicy" : {
+  "ScaleUpPolicy" : {
     "Type" : "AWS::AutoScaling::ScalingPolicy",
     "Properties" : {
       "AdjustmentType" : "ChangeInCapacity",
-      "AutoScalingGroupName" : { "Ref" : "WebServerGroup" },
+      "AutoScalingGroupName" : { "Ref" : "AutoScalingGroup" },
       "Cooldown" : "60",
       "ScalingAdjustment" : "1"
     }
   },
-  "WebServerScaleDownPolicy" : {
+
+  "ScaleDownPolicy" : {
     "Type" : "AWS::AutoScaling::ScalingPolicy",
     "Properties" : {
       "AdjustmentType" : "ChangeInCapacity",
-      "AutoScalingGroupName" : { "Ref" : "WebServerGroup" },
+      "AutoScalingGroupName" : { "Ref" : "AutoScalingGroup" },
       "Cooldown" : "60",
       "ScalingAdjustment" : "-1"
     }
   },
 
   "CPUAlarmHigh": {
-   "Type": "AWS::CloudWatch::Alarm",
-   "Properties": {
-      "AlarmDescription": "Scale-up if CPU > 90% for 10 minutes",
+    "Type": "AWS::CloudWatch::Alarm",
+    "Properties": {
+      "AlarmDescription": "Scale-up if CPU > 70% for 10 minutes",
       "MetricName": "CPUUtilization",
       "Namespace": "AWS/EC2",
       "Statistic": "Average",
       "Period": "300",
       "EvaluationPeriods": "2",
       "Threshold": "70",
-      "AlarmActions": [ { "Ref": "WebServerScaleUpPolicy" } ],
+      "AlarmActions": [ { "Ref": "ScaleUpPolicy" } ],
       "Dimensions": [
-        {
-          "Name": "AutoScalingGroupName",
-          "Value": { "Ref": "WebServerGroup" }
-        }
-      ],
-      "ComparisonOperator": "GreaterThanThreshold"
+                     {
+                       "Name": "AutoScalingGroupName",
+                       "Value": { "Ref": "AutoScalingGroup" }
+                     }
+                     ],
+                     "ComparisonOperator": "GreaterThanThreshold"
     }
   },
   "CPUAlarmLow": {
-   "Type": "AWS::CloudWatch::Alarm",
-   "Properties": {
-      "AlarmDescription": "Scale-down if CPU < 70% for 10 minutes",
+    "Type": "AWS::CloudWatch::Alarm",
+    "Properties": {
+      "AlarmDescription": "Scale-down if CPU < 40% for 10 minutes",
       "MetricName": "CPUUtilization",
       "Namespace": "AWS/EC2",
       "Statistic": "Average",
       "Period": "300",
       "EvaluationPeriods": "2",
       "Threshold": "40",
-      "AlarmActions": [ { "Ref": "WebServerScaleDownPolicy" } ],
+      "AlarmActions": [ { "Ref": "ScaleDownPolicy" } ],
       "Dimensions": [
-        {
-          "Name": "AutoScalingGroupName",
-          "Value": { "Ref": "WebServerGroup" }
-        }
-      ],
-      "ComparisonOperator": "LessThanThreshold"
+                     {
+                       "Name": "AutoScalingGroupName",
+                       "Value": { "Ref": "AutoScalingGroup" }
+                     }
+                     ],
+                     "ComparisonOperator": "LessThanThreshold"
     }
   },
 
@@ -497,10 +517,14 @@
   "ALBListener" : {
     "Type" : "AWS::ElasticLoadBalancingV2::Listener",
     "Properties" : {
-      "DefaultActions" : [{
-        "Type" : "forward",
-        "TargetGroupArn" : { "Ref" : "ALBTargetGroup" }
-      }],
+      "DefaultActions": [
+        {
+          "Type": "forward",
+          "TargetGroupArn": {
+            "Ref": "ALBTargetGroup"
+          }
+        }
+      ],
       "LoadBalancerArn" : { "Ref" : "ApplicationLoadBalancer" },
       "Port" : "80",
       "Protocol" : "HTTP"
@@ -531,7 +555,7 @@
             },
             "ASGID": {
               "Description": "ASG ID",
-              "Value":  { "Ref" : "WebServerGroup" }
+              "Value":  { "Ref" : "AutoScalingGroup" }
             },
             "URL": {
               "Description": "URL of the website",
