@@ -1,0 +1,67 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+   "Description" : "crea EFS con SG",
+   "Parameters" : {
+"WPVolumeName": {
+    "Type" : "String",
+    "Description": "Nombre de volumen",
+    "Default" : "WPEFS"  
+},
+  "VPC" : {
+    "Type" : "AWS::EC2::VPC::Id",
+    "Description" : "VpcId"
+  },
+  "WPSubnet": {
+    "Description": "Subnets existentes",
+    "Type": "AWS::EC2::Subnet::Id"
+}
+},
+   "Resources" : {
+    "WPFileSystem": {
+        "Type": "AWS::EFS::FileSystem",
+        "Properties": {
+          "PerformanceMode": "generalPurpose",
+          "FileSystemTags": [
+            {
+              "Key": "Name",
+              "Value": { "Ref" : "WPVolumeName" }
+            }
+          ]
+        }
+      },
+      "MountTarget": {
+        "Type": "AWS::EFS::MountTarget",
+        "Properties": {
+          "FileSystemId": { "Ref": "WPFileSystem" },
+          "SubnetId": { "Ref": "WPSubnet" },
+          "SecurityGroups": [ { "Ref": "MountTargetSecurityGroup" } ]        
+        }
+      },
+      "MountTargetSecurityGroup": {
+        "Type": "AWS::EC2::SecurityGroup",
+        "Properties": {
+          "VpcId": { "Ref": "VPC" },
+          "GroupDescription": "Security group for mount target",
+          "SecurityGroupIngress": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": "2049",
+              "ToPort": "2049",
+              "CidrIp": "172.31.0.0/16"
+            }
+          ]
+        }
+      }
+
+},
+   "Outputs" : {
+    "MountTargetID" : {
+        "Description" : "Mount target ID",
+        "Value" :  { "Ref" : "MountTarget" }
+      },
+      "FileSystemID" : {
+        "Description" : "File system ID",
+        "Value" :  { "Ref" : "WPFileSystem" }   
+      }
+    }
+}

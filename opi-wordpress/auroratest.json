@@ -1,0 +1,142 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation Sample Template for creating an Amazon RDS DB instance: Sample template showing how to create a DB instance with Enhanced Monitoring enabled. **WARNING** This template creates an RDS DB instance. You will be billed for the AWS resources used if you create a stack from this template. Please create a role with enhanced monitoring inside IAM Role with the properly name.",
+
+    "Parameters": {
+        "DBInstanceID": {
+            "Default": "opiMySQL",
+            "Description": "Permutaprop MySql",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "63",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+
+            "ConstraintDescription": "Must begin with a letter and must not end with a hyphen or contain two consecutive hyphens."
+        },
+        "DBName": {
+            "Default": "opidb",
+            "Description": "My DB",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "Must begin with a letter and contain only alphanumeric characters."
+        },
+        "DBAllocatedStorage": {
+            "Default": "100",
+            "Description": "The size of the database (GiB)",
+            "Type": "Number",
+            "MinValue": "5",
+            "MaxValue": "1024",
+            "ConstraintDescription": "must be between 20 and 65536 GiB."
+        },
+        "DBInstanceClass": {
+            "Default": "db.r5.large",
+            "Description": "DB instance class",
+            "Type": "String",
+            "ConstraintDescription": "Must select a valid DB instance type."
+        },
+        "DBUsername": {
+            "Description": "Username for MySQL database access",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "16",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+        },
+
+        "DBPassword": {
+            "NoEcho": "true",
+            "Description": "Password MySQL database access",
+            "Type": "String",
+            "MinLength": "8",
+            "MaxLength": "41",
+            "AllowedPattern": "[a-zA-Z0-9]*",
+            "ConstraintDescription": "must contain only alphanumeric characters."
+        },
+        "ENV": {
+            "Description": "Environment Staging or Prod",
+            "Type": "String",
+            "Default": "Stage",
+            "AllowedValues": [
+              "Stage",
+              "Prod"
+            ]
+          },
+          "Resource": {
+            "Description": "Resource tag.",
+            "Type": "String",
+            "Default": "MySQL DB"
+          }
+    },
+    "Resources": {
+        "MySQLServerSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+              "GroupDescription": "SQL Server Security Group",
+              "SecurityGroupIngress": [
+                {
+                  "IpProtocol": "tcp",
+                  "FromPort": "3306",
+                  "ToPort": "3306",
+                  "CidrIp": "172.31.0.0/16"
+                }
+              ]
+            }
+          },
+        "opiDB": {
+            "Type": "AWS::RDS::DBInstance",
+            "Properties": {
+                "VPCSecurityGroups": [
+                    {
+                      "Fn::GetAtt": [
+                        "MySQLServerSecurityGroup",
+                        "GroupId"
+                      ]
+                    }
+                  ],
+                "DBInstanceIdentifier": {
+                    "Ref": "DBInstanceID"
+                },
+
+                "DBName": {
+                    "Ref": "DBName"
+                },
+                "AllocatedStorage": {
+                    "Ref": "DBAllocatedStorage"
+                },
+                "DBInstanceClass": {
+                    "Ref": "DBInstanceClass"
+                },
+                "Engine": "Aurora",
+                "EngineVersion": "5.6.10a",
+                "MultiAZ": false,
+                "Tags" : [
+                    {
+                       "Key" : "Name",
+                       "Value" : {"Ref" : "Resource" }
+                    },
+                    {
+                       "Key" : "Environment",
+                       "Value" : {"Ref" : "ENV" }
+                    }
+                 ],
+                "BackupRetentionPeriod": "14",
+                "MasterUsername": {
+
+                    "Ref": "DBUsername"
+                },
+                "MasterUserPassword": {
+                    "Ref": "DBPassword"
+
+                }
+        }
+    }
+},
+    "Outputs" : {
+        "MySqlOutdata" : {
+         "Description" : "MySQL Output data",
+         "Value" : "opiDB"    
+              } 
+          }  
+      }

@@ -1,0 +1,89 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+   "Description" : "crear una instancia ec2 con un LB, nginx, S3 y CDN (distribucion archivos bucket), EFS, Elastic Cache, SG, RDS (Instalar ultima version wordpress) / sin r53, sin ASG y sin VPN",
+   "Parameters" : {
+   "InstanceType": {
+     "Type" : "String",
+     "Description": "tipo de instancia",
+     "AllowedValues" : [ "t2.micro", "t2.small" ],
+     "Default" : "t2.micro"  
+},
+"WPVolumeName": {
+    "Type" : "String",
+    "Description": "Nombre de volumen",
+    "Default" : "WPEFS"  
+},
+"KeyPair" : {
+  "Type" : "AWS::EC2::KeyPair::KeyName",
+  "Description" : "KeyPair para acceder a instancia" , 
+  "AllowedPattern" : ".+",
+  "ConstraintDescription" : "Es obligatorio seleccionar un KeyPair, default key", 
+  "Default" : "opi-default"  
+  },
+  "VPC" : {
+    "Type" : "AWS::EC2::VPC::Id",
+    "Description" : "VpcId"
+  },
+  "WPSubnet": {
+    "Description": "Subnets existentes",
+    "Type": "AWS::EC2::Subnet::Id"
+},
+   "ImageId":{
+    "Description": "Image ID",
+    "Type": "AWS::EC2::Image::Id"
+   }
+},
+   "Resources" : {
+      "WPInstance" : {
+         "Type" : "AWS::EC2::Instance",   
+        "Properties" : {
+          "ImageId" : { "Ref": "ImageId" },
+          "InstanceType" : { "Ref" : "InstanceType" },
+          "KeyName" : { "Ref" : "KeyPair" }
+        }
+    },
+    "WPFileSystem": {
+        "Type": "AWS::EFS::FileSystem",
+        "Properties": {
+          "PerformanceMode": "generalPurpose",
+          "FileSystemTags": [
+            {
+              "Key": "Name",
+              "Value": { "Ref" : "WPVolumeName" }
+            }
+          ]
+        }
+      },
+      "MountTarget": {
+        "Type": "AWS::EFS::MountTarget",
+        "Properties": {
+          "FileSystemId": { "Ref": "WPFileSystem" },
+          "SubnetId": { "Ref": "WPSubnet" },
+          "SecurityGroups": [ { "Ref": "MountTargetSecurityGroup" } ]        
+        }
+      },
+      "MountTargetSecurityGroup": {
+        "Type": "AWS::EC2::SecurityGroup",
+        "Properties": {
+          "VpcId": { "Ref": "VPC" },
+          "GroupDescription": "Security group for mount target",
+          "SecurityGroupIngress": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": "2049",
+              "ToPort": "2049",
+              "CidrIp": "172.31.0.0/16"
+            }
+          ]
+        }
+      }
+
+},
+   "Outputs" : {
+      "PublicIP" : {
+       "Description" : "Ip Publica de la instancia",
+       "Value" : { "Fn::GetAtt": [ "WPInstance", "PublicIp" ]    
+            } 
+        }
+    }  
+}
